@@ -23,6 +23,7 @@
 
 <details>
 <summary>Debian/Ubuntu</summary>
+
 ```bash
 sudo apt update
 sudo apt install cgroup-tools
@@ -31,6 +32,7 @@ sudo apt install cgroup-tools
 
 <details>
 <summary>RHEL/CentOS/Fedora</summary>
+
 ```bash
 sudo yum install libcgroup-tools
 ```
