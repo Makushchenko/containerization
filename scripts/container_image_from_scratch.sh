@@ -65,7 +65,7 @@ sudo runc ps demo
 sudo runc kill demo KILL
 ###########
 # Add network namespace path to config.json
-#   "path": "/var/run/netns/runc"
+  "path": "/var/run/netns/runc"
 # Create a new network namespace named 'runc'
 sudo ip netns add runc
 # List network namespaces
