@@ -2,7 +2,7 @@
 
 ---
 
-# cgroups
+# 1. cgroups
 
 ## Overview
 
@@ -110,3 +110,64 @@ sudo cgdelete -g cpu,memory:webserver
 * Linux Kernel Documentation: [https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
 * cgroup-tools GitHub: [https://github.com/hjl-tools/libcgroup](https://github.com/hjl-tools/libcgroup)
 * man pages: `man cgcreate`, `man cgexec`, `man cgset`, `man cgdelete`
+
+---
+
+# 2. Container Image From Scratch
+
+This guide walks you through building and running a container image from scratch using Linux namespaces, `docker export`, and the OCI runtime `runc`. You’ll learn how to:
+
+1. **Explore isolation primitives** with the `unshare` command.
+2. **Extract a filesystem** from a simple BusyBox container.
+3. **Run that filesystem** in a fresh namespace environment.
+4. **Generate and customize** an OCI bundle with `runc`.
+5. **Wire up networking** manually (bridge + veth pair).
+6. **Inspect image layers** using `dive`.
+
+---
+
+## 1. Preparations & Namespace Exploration
+
+Begin by examining the `unshare` help to understand which namespaces you can isolate (UTS, IPC, mount, network, PID, user, cgroup). Then launch a throw‑away shell that has completely separated namespaces, and inspect inside:
+
+* Check your UID/GID, filesystem view, and network interfaces.
+* Exit back to the host when you’re done.
+
+## 2. Extracting a Minimal RootFS
+
+Use Docker to spin up a lightweight BusyBox container, then export its filesystem into a local directory (`rootfs`).
+
+* This gives you a minimal, standalone root filesystem without Docker running at runtime.
+
+## 3. Running the Exported FS in Namespaces
+
+Re‑enter `rootfs` under its own isolated namespaces.
+
+* Observe running processes, network stack, and filesystem in this minimal environment.
+* Exit back to the host afterward.
+
+## 4. Bootstrapping an OCI Bundle with `runc`
+
+Generate a default `config.json` via `runc spec`.
+
+* Review the bundle layout (`config.json` + `rootfs` directory).
+* Launch the container as `demo`, then inspect interfaces and processes inside.
+* Customize the `args` in `config.json` to run a simple HTTP server, and disable the TTY (`"terminal": false`).
+* Restart the container to verify your changes and then stop it.
+
+## 5. Manual Network Setup
+
+Assign a dedicated network namespace to your container:
+
+1. Create a named namespace (e.g., `runc`).
+2. Edit `config.json` to reference `/var/run/netns/runc`.
+3. On the host, build a Linux bridge (`runc0`) and a veth pair connecting host ↔ container.
+4. Move one end of the veth into the `runc` namespace, rename it inside, assign an IP, and set up a default route.
+5. Run the `demo` container again; from another shell, verify you can reach the HTTP server.
+
+## 6. Inspecting Image Layers with Dive
+
+Finally, use the `dive` tool to analyze the layers of any Docker image:
+
+* Download and install `dive`.
+* Run `dive <image_id>` to explore layer contents, efficiency, and potential space optimizations.
