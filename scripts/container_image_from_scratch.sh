@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Display help for the unshare command
 unshare -h
 
