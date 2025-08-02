@@ -171,3 +171,43 @@ Finally, use the `dive` tool to analyze the layers of any Docker image:
 
 * Download and install `dive`.
 * Run `dive <image_id>` to explore layer contents, efficiency, and potential space optimizations.
+
+---
+
+# 3. Container Image Deployment
+
+This guide walks through the high-level steps to build, publish, and run a containerized app using Docker, GitHub Container Registry (GHCR), kind, and Kubernetes.
+
+1. **Build and Validate Locally**  
+   - Create a Dockerfile that packages your application.  
+   - Build the image (e.g. with `docker build`) and list images to confirm its presence.  
+   - Run it locally (e.g. via `docker run`) and perform a quick smoke test to ensure the app responds as expected.
+
+2. **Authenticate & Push to GHCR**  
+   - Obtain a GitHub Personal Access Token with package-write scope and store it in an environment variable.  
+   - Log in to `ghcr.io` using that token so Docker can push.  
+   - Tag the locally built image with the `ghcr.io/<owner>/<repo>:<tag>` pattern and push it, making the image available remotely.
+
+3. **Set Up a Local Kubernetes Cluster**  
+   - Install the kind tool to run Kubernetes in Docker.  
+   - Create a cluster instance (e.g. named `kind-ghcr`) that will host your deployment.
+
+4. **Deploy the Container to Kubernetes**  
+   - Use a Deployment manifest or CLI (e.g. `kubectl create deploy`) to point at your GHCR image.  
+   - Verify that the Deployment and its Pods come up healthy.
+
+5. **Enable Private Registry Access**  
+   - Create a Kubernetes secret of type `docker-registry` containing your GHCR credentials.  
+   - Patch the default ServiceAccount so Pods can pull from the private registry without manual intervention.
+
+6. **Roll Out Changes & Inspect**  
+   - Trigger a rollout restart to ensure new Pods pull the updated image and secrets.  
+   - Watch Pod status and inspect logs to catch any startup errors.
+
+7. **Expose & Test the Service**  
+   - Expose your Deployment as a ClusterIP or NodePort service.  
+   - Optionally use port-forwarding to map the service port to your localhost and run HTTP tests.
+
+8. **Debug Inside the Container**  
+   - Exec into a running Pod (e.g. via `kubectl exec`) to list files or inspect network interfaces.  
+   - Use these low-level checks to troubleshoot configuration, file paths, or connectivity.
