@@ -211,3 +211,29 @@ This guide walks through the high-level steps to build, publish, and run a conta
 8. **Debug Inside the Container**  
    - Exec into a running Pod (e.g. via `kubectl exec`) to list files or inspect network interfaces.  
    - Use these low-level checks to troubleshoot configuration, file paths, or connectivity.
+
+---
+
+# 4. Image Efficiency Check with Dive
+
+In this section, we’ll use the Dive tool to measure and improve the efficiency of our container image. Dive inspects each layer, reports wasted space, and helps guide Dockerfile optimizations.
+
+### Steps
+
+1. **Install Dive**  
+   Query the GitHub Releases API to find the latest Dive version, download the matching Debian package, install it via the system package manager, and then remove the installer to keep your environment clean.
+
+2. **Authenticate to GHCR**  
+   Read your GitHub Container Registry token in silent mode, then log Docker into `ghcr.io` so Dive can pull and analyze private images.
+
+3. **Analyze the baseline image**  
+   Run Dive in CI mode against the existing `v1.0.0` image. At 100 % efficiency and zero wasted bytes, this confirms our starting point is perfectly optimized.
+
+4. **Simulate inefficiency**  
+   Introduce a “waste” layer in your Dockerfile that writes a multi-megabyte dummy file and then deletes it in a subsequent layer. Even though the file is removed, its bytes remain in the earlier layer’s history.
+
+5. **Rebuild and re-evaluate**  
+   Build and tag the modified image (e.g. `v1.0.1-waste-layer`), then re-run Dive in both CI and interactive modes. You’ll now see non-zero wasted bytes and an efficiency drop below your threshold.
+
+6. **Remove the waste and validate**  
+   Strip out the dummy file instructions from the Dockerfile, rebuild the “fixed” image (`v1.0.1-fix-waste-layer`), and analyze again. Efficiency should return to 100 % and wasted bytes should disappear, proving the cleanup worked.
